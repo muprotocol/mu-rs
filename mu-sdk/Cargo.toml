@@ -1,0 +1,7 @@
+[package]
+name = "mu-sdk"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+mu-sdk-macros = { path = "../mu-sdk-macros" }

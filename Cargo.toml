@@ -1,0 +1,3 @@
+[workspace]
+members = ["mu-cli", "mu-sdk", "mu-sdk-macros"]
+resolver = "2"
