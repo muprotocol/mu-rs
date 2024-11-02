@@ -23,7 +23,7 @@ pub fn function(
     if add_export_candid || true {
         quote! {
             #r
-         //   ic_cdk::export_candid!();
+            ic_cdk::export_candid!();
         }
     } else {
         r

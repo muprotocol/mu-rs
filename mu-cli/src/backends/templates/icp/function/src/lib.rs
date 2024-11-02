@@ -1,4 +1,11 @@
+use std::sync::{LazyLock, Mutex};
+
+static counter: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
+
 #[mu_sdk::function]
-fn add(a: i32, b: i32) -> i32 {
-    a + b
+fn count() -> i32 {
+    let mut c = counter.lock().unwrap();
+
+    *c += 1;
+    *c
 }

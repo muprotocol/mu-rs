@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 mu-sdk-macros = { path = "../mu-sdk-macros" }
+ic-cdk = "0.16"
+candid = "0.10"

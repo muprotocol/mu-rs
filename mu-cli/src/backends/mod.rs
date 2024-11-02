@@ -4,16 +4,11 @@ use rust_embed::Embed;
 use serde_json::Value;
 
 pub mod icp;
+pub mod js;
 
 #[derive(Embed)]
 #[folder = "src/backends/templates"]
 struct Templates;
-
-pub trait FunctionBackend {
-    fn new_function(&mut self, name: String);
-
-    fn build(&self);
-}
 
 pub fn render_template(template_name: &str, destination: &str, data: Value) {
     let handlebars = handlebars::Handlebars::new();

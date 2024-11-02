@@ -9,7 +9,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-mu-sdk = "0.0.1"
+mu-sdk = { git = "https://github.com/muprotocol/mu-rs" }
+ic-cdk = "0.16"
+candid = "0.10"
+
 
 [build-dependencies]
 uuid = { version = "1.11.0", features = ["v4"] }

@@ -1,8 +1,10 @@
 use clap::{Parser, Subcommand};
-use project::{FunctionType, MuProject};
+use project::{MuFrontendTemplate, MuFunctionType, MuProject};
+use util::print_full_line;
 
 mod backends;
 mod project;
+pub mod util;
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -24,7 +26,16 @@ enum Commands {
         command: Function,
     },
 
+    Frontend {
+        #[command(subcommand)]
+        command: Frontend,
+    },
+
     Build,
+
+    Deploy,
+
+    Dev,
 }
 
 #[derive(Subcommand)]
@@ -33,30 +44,44 @@ enum Function {
     Add {
         name: String,
         #[arg(id = "TYPE")]
-        fn_type: FunctionType,
+        fn_type: MuFunctionType,
     },
+}
+
+#[derive(Subcommand)]
+enum Frontend {
+    /// Adds a new frontend
+    Add {
+        name: String,
+        #[arg(id = "TYPE")]
+        template: MuFrontendTemplate,
+    },
+}
+
+fn get_project() -> MuProject {
+    let project = MuProject::load();
+    if project.is_none() {
+        eprintln!("No project found. Run `mu init` first.");
+        std::process::exit(1);
+    }
+    project.unwrap()
 }
 
 fn main() {
     let cli = MuCli::parse();
 
+    print_full_line("Welcome to Mu [μ]!");
+
     match cli.command {
         Commands::Function { command } => match command {
             Function::Add { name, fn_type } => {
-                let project = MuProject::load();
-                if project.is_none() {
-                    eprintln!("No project found. Run `mu init` first.");
-                    std::process::exit(1);
-                }
-
-                project.unwrap().add_function(&name, fn_type);
+                get_project().add_function(&name, fn_type);
             }
         },
         Commands::Init { name } => {
             let name = if let Some(name) = name {
                 name
             } else {
-                // current directory name
                 std::env::current_dir()
                     .unwrap()
                     .file_name()
@@ -68,15 +93,19 @@ fn main() {
 
             MuProject::init(name);
         }
-        Commands::Build => {
-            let project = MuProject::load();
-            if project.is_none() {
-                eprintln!("No project found. Run `mu init` first.");
-                std::process::exit(1);
+        Commands::Frontend { command } => match command {
+            Frontend::Add { name, template } => {
+                get_project().add_frontend(&name, template);
             }
-
-            let project = project.unwrap();
-            project.build();
+        },
+        Commands::Build => {
+            get_project().build();
+        }
+        Commands::Deploy => {
+            get_project().deploy();
+        }
+        Commands::Dev => {
+            get_project().dev();
         }
     }
 }
