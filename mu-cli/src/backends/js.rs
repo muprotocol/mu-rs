@@ -1,9 +1,18 @@
-use std::process::Command;
+use tokio::{
+    net::TcpStream,
+    process::Command,
+    sync::mpsc::{self, UnboundedReceiver},
+    time::sleep,
+    time::Duration,
+};
 
 use serde_json::json;
 
 use super::render_template;
-use crate::project::{config::MuFrontendConfig, MuFrontendTemplate};
+use crate::{
+    project::{config::MuFrontendConfig, MuFrontendTemplate},
+    util::print_full_line,
+};
 
 pub struct JsBackend<'a> {
     config: &'a MuFrontendConfig,
@@ -32,15 +41,39 @@ impl<'a> JsBackend<'a> {
         };
 
         render_template(template_path, &self.root, data);
+
+        std::process::Command::new("npm")
+            .arg("install")
+            .current_dir(&self.root)
+            .status()
+            .expect("Failed to install dependencies");
+
+        print_full_line("Frontend created!");
     }
 
-    pub fn dev(&self) {
-        // serve with npm run dev
-        Command::new("npm")
-            .arg("run")
-            .arg("dev")
-            .current_dir(&self.root)
-            .spawn()
-            .expect("Failed to start dev server");
+    pub fn dev(self) -> UnboundedReceiver<()> {
+        let (tx, rx) = mpsc::unbounded_channel();
+        print_full_line("Dev server started at http://localhost:5173");
+        tokio::spawn(async move {
+            let mut child = Command::new("npm")
+                .arg("run")
+                .arg("dev")
+                .current_dir(&self.root)
+                .spawn()
+                .expect("Failed to start dev server");
+
+            loop {
+                let conn = TcpStream::connect("localhost:5173").await;
+                if conn.is_ok() {
+                    break;
+                }
+                sleep(Duration::from_secs(1)).await;
+            }
+
+            tx.send(()).unwrap();
+
+            child.wait().await.unwrap();
+        });
+        rx
     }
 }

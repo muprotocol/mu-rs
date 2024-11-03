@@ -1,11 +1,13 @@
 use clap::ValueEnum;
 use config::{MuFrontendConfig, MuFunctionConfig, MuProjectConfig, MuProjectMetadata};
+use futures::{future::join_all, StreamExt};
 use serde::{Deserialize, Serialize};
 use state::{MuBackendFunctionState, MuFunctionState, MuProjectState};
+use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::{
     backends::{icp::IcpFunction, js::JsBackend},
-    util::print_full_line,
+    util::{print_full_line, MyWatcher},
 };
 
 pub mod config;
@@ -56,10 +58,16 @@ impl MuProject {
             .map(|(config, state)| MuFunction { config, state })
             .collect();
 
+        let frontends = config
+            .frontends
+            .into_iter()
+            .map(|config| MuFrontend { config })
+            .collect();
+
         Some(MuProject {
             metadata: config.metadata,
             functions,
-            frontends: vec![],
+            frontends,
         })
     }
 
@@ -89,10 +97,52 @@ impl MuProject {
 
         self.save();
     }
+    pub fn dev(mut self) {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let _enter = rt.enter();
 
-    pub fn dev(&mut self) {
-        self.frontends.iter().for_each(|f| f.dev());
-        self.functions.iter_mut().for_each(|f| f.dev());
+        let fut = tokio::spawn(async move {
+            // Wait for the functions to be ready
+            let mut watchers = self
+                .functions
+                .iter_mut()
+                .map(|f| {
+                    f.build();
+                    f.deploy();
+                    MyWatcher::new(&f.get_root())
+                })
+                .collect::<Vec<_>>();
+
+            self.save();
+
+            // Start the frontends
+            join_all(self.frontends.iter().map(|f| async {
+                let mut rx = f.dev();
+                rx.recv().await.unwrap();
+            }))
+            .await;
+
+            // Start the watchers
+            for w in watchers.iter_mut() {
+                w.enable();
+            }
+            print_full_line("Ready!!!");
+
+            loop {
+                let (_result, idx, _rest) =
+                    futures::future::select_all(watchers.iter_mut().map(|w| w.next())).await;
+                let func = &mut self.functions[idx];
+                func.build();
+                func.deploy();
+                self.save();
+                watchers[idx].enable();
+            }
+        });
+
+        rt.block_on(fut).unwrap();
     }
 
     pub fn build(&mut self) {
@@ -180,17 +230,8 @@ impl MuFunction {
         }
     }
 
-    pub fn dev(&mut self) {
-        match &self.state.backend_state {
-            MuBackendFunctionState::Icp(_icp) => {
-                let mut icp_function =
-                    IcpFunction::new(&format!("functions/{}", self.state.name), self);
-                icp_function.dev();
-            }
-            MuBackendFunctionState::Solana(_) => {
-                unimplemented!();
-            }
-        }
+    pub fn get_root(&self) -> String {
+        format!("functions/{}", self.state.name)
     }
 }
 
@@ -212,12 +253,16 @@ impl MuFrontend {
         out
     }
 
-    fn get_backend(&self) -> JsBackend {
-        JsBackend::new(&format!("frontends/{}", self.config.name), &self.config)
+    pub fn get_root(&self) -> String {
+        format!("frontends/{}", self.config.name)
     }
 
-    pub fn dev(&self) {
-        self.get_backend().dev();
+    fn get_backend(&self) -> JsBackend {
+        JsBackend::new(&self.get_root(), &self.config)
+    }
+
+    pub fn dev(&self) -> UnboundedReceiver<()> {
+        self.get_backend().dev()
     }
 }
 

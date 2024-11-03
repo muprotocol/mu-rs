@@ -5,15 +5,15 @@ use crate::{
 };
 use candid::TypeEnv;
 use candid_parser::{typing, IDLProg};
-use notify::RecursiveMode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     collections::HashMap,
     fs,
+    net::TcpStream,
     path::Path,
     process::{Child, Command, Stdio},
-    sync::{mpsc, LazyLock, Mutex},
+    sync::{LazyLock, Mutex},
     thread::sleep,
     time::Duration,
 };
@@ -110,6 +110,8 @@ impl<'a> IcpFunction<'a> {
     }
 
     pub fn deploy(&mut self) {
+        Self::start();
+
         print_full_line("Deploying ICP project...");
         let r = Command::new("dfx")
             .arg("deploy")
@@ -148,38 +150,17 @@ impl<'a> IcpFunction<'a> {
             .expect("Failed to start dfx");
 
         *DFX_PROCESS.lock().unwrap() = Some(dfx);
-        sleep(Duration::from_secs(10));
-    }
-
-    pub fn dev(&mut self) {
-        Self::start();
-
-        let (tx, rx) = mpsc::channel();
-        let mut debouncer =
-            notify_debouncer_mini::new_debouncer(Duration::from_secs(2), tx).unwrap();
-        debouncer
-            .watcher()
-            .watch(Path::new(&self.root), RecursiveMode::Recursive)
-            .unwrap();
 
         loop {
-            match rx.recv() {
-                Ok(_event) => {
-                    print_full_line("Building and deploying...");
-                    self.deploy();
-
-                    sleep(Duration::from_secs(5));
-                    while rx.try_recv().is_ok() {} // Clear the channel
-                    print_full_line("Ready!!!");
-                }
-                Err(e) => {
-                    eprintln!("Error: {:?}", e);
-                    break;
-                }
+            let conn = TcpStream::connect("localhost:4943");
+            if conn.is_ok() {
+                break;
             }
+            sleep(Duration::from_secs(1));
         }
     }
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IcpConfig {
     canisters: HashMap<String, Canister>,
