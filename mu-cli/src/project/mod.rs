@@ -134,11 +134,13 @@ impl MuProject {
             loop {
                 let (_result, idx, _rest) =
                     futures::future::select_all(watchers.iter_mut().map(|w| w.next())).await;
+                print_full_line("Change detected, rebuilding...");
                 let func = &mut self.functions[idx];
                 func.build();
                 func.deploy();
                 self.save();
                 watchers[idx].enable();
+                print_full_line("Ready again!!!");
             }
         });
 

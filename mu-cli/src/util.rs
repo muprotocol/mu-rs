@@ -2,7 +2,7 @@ use std::path::Path;
 
 use colored::Colorize;
 use futures::Stream;
-use notify::{RecursiveMode, Watcher};
+use notify::{Event, RecursiveMode, Watcher};
 use terminal_size::{terminal_size, Width};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
@@ -30,9 +30,11 @@ pub struct MyWatcher {
 impl MyWatcher {
     pub fn new(path: &str) -> Self {
         let (event_tx, event_rx) = mpsc::unbounded_channel();
-        let mut watcher = notify::recommended_watcher(move |res| match res {
-            Ok(_event) => {
-                event_tx.send(()).unwrap();
+        let mut watcher = notify::recommended_watcher(move |res: Result<Event, _>| match res {
+            Ok(event) => {
+                if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
+                    event_tx.send(()).unwrap();
+                }
             }
             Err(e) => {
                 println!("watch error: {:?}", e);
