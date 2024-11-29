@@ -2,6 +2,10 @@
 name = "mu-sdk-macros"
 version = "0.0.1"
 edition = "2021"
+authors = ["Mu Team <info@muprotocol.io>"]
+description = "Mu SDK macros"
+license = "Apache-2.0"
+repository = "https://github.com/muprotocol/mu-rs"
 
 [lib]
 proc-macro = true
