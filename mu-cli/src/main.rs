@@ -16,9 +16,7 @@ struct MuCli {
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize a new project
-    Init {
-        name: Option<String>,
-    },
+    Init { name: Option<String> },
 
     /// Work with Mu functions
     Function {
@@ -26,15 +24,19 @@ enum Commands {
         command: Function,
     },
 
+    /// Work with Mu frontends
     Frontend {
         #[command(subcommand)]
         command: Frontend,
     },
 
+    /// Build the project
     Build,
 
+    /// Deploy the project
     Deploy,
 
+    /// Run the project in development mode
     Dev,
 }
 

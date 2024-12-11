@@ -1,7 +1,11 @@
 [package]
 name = "mu-cli"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+authors = ["Mu Team <info@muprotocol.io>"]
+description = "The Mu SDK for bridging the Web2 and Web3 worlds"
+license = "Apache-2.0"
+repository = "https://github.com/muprotocol/mu-rs"
 
 [[bin]]
 name = "mu"
