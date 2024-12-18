@@ -1,0 +1,12 @@
+[package]
+name = "mu-kv"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.16"
+candid = "0.10"
+ic_principal = "0.1.1"

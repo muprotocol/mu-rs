@@ -11,5 +11,6 @@ repository = "https://github.com/muprotocol/mu-rs"
 proc-macro = true
 
 [dependencies]
+proc-macro2 = "1.0.92"
 quote = "1.0.37"
 syn = { version = "2", features = ["full"] }

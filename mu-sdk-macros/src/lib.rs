@@ -1,32 +1,59 @@
 use quote::quote;
-use std::fs;
-use std::path::Path;
+use syn::ItemFn;
 
 #[proc_macro_attribute]
-pub fn function(
+pub fn public(
     _attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let item = syn::parse_macro_input!(item as syn::Item);
+    let module = syn::parse_macro_input!(item as syn::ItemMod);
 
-    let build_uuid = std::env::var("MU_BUILD_UUID").unwrap();
-    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let mod_ident = &module.ident; // Module name
+    let mut new_content = Vec::new();
 
-    let add_export_candid = !Path::new(&format!("{}/{}", out_dir, build_uuid)).exists();
-    fs::write(format!("{}/{}", out_dir, build_uuid), "").unwrap();
-
-    let r = quote! {
-        #[ic_cdk::update]
-        #item
-    };
-
-    if add_export_candid || true {
-        quote! {
-            #r
-            ic_cdk::export_candid!();
+    // Iterate over all items in the module
+    if let Some((_, items)) = &module.content {
+        for item in items {
+            if let syn::Item::Fn(func) = item {
+                // Process each function
+                new_content.push(process_function(func));
+            } else {
+                // Keep non-function items as they are
+                new_content.push(quote! { #item });
+            }
         }
-    } else {
-        r
+    }
+
+    // Reconstruct the module
+    quote! {
+        mod #mod_ident {
+            #( #new_content )*
+        }
+
+        ic_cdk::export_candid!();
     }
     .into()
+}
+
+fn process_function(func: &ItemFn) -> proc_macro2::TokenStream {
+    let mut transformed_func = func.clone();
+
+    let has_function_attr = func
+        .attrs
+        .iter()
+        .any(|attr| attr.path().is_ident("function"));
+    if has_function_attr {
+        // add the ic_cdk attribute to the function and remove the function attribute
+        transformed_func
+            .attrs
+            .push(syn::parse_quote!(#[ic_cdk::update]));
+        transformed_func
+            .attrs
+            .retain(|attr| !attr.path().is_ident("function"));
+    }
+
+    // Convert the function back into a token stream
+    quote! {
+        #transformed_func
+    }
 }

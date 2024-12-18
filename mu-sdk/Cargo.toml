@@ -11,3 +11,5 @@ repository = "https://github.com/muprotocol/mu-rs"
 mu-sdk-macros = { path = "../mu-sdk-macros", version = "0.0.1" }
 ic-cdk = "0.16"
 candid = "0.10"
+ic_principal = "0.1.1"
+serde = "1.0.216"
