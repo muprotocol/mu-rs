@@ -18,7 +18,7 @@ pub trait MuKvCollection {
 pub struct MuIcpKv;
 
 const KV_PRINCIPAL: LazyCell<Principal> =
-    LazyCell::new(|| "bkyz2-fmaaa-aaaaa-qaaaq-cai".parse().unwrap());
+    LazyCell::new(|| "by6od-j4aaa-aaaaa-qaadq-cai".parse().unwrap());
 
 impl MuIcpKv {
     pub fn new() -> Self {

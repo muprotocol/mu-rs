@@ -1,11 +1,14 @@
-use std::sync::{LazyLock, Mutex};
+#[mu_sdk::public]
+mod counter {
+    use std::sync::{LazyLock, Mutex};
 
-static COUNTER: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
+    static COUNTER: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
 
-#[mu_sdk::function]
-fn count() -> i32 {
-    let mut c = COUNTER.lock().unwrap();
+    #[function]
+    fn count() -> i32 {
+        let mut c = COUNTER.lock().unwrap();
 
-    *c += 1;
-    *c
+        *c += 1;
+        *c
+    }
 }

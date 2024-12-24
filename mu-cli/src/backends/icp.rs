@@ -79,7 +79,7 @@ impl<'a> IcpFunction<'a> {
         let candid = Command::new("candid-extractor")
             .arg(format!(
                 "target/wasm32-unknown-unknown/release/{}.wasm",
-                self.function.config.name
+                self.function.config.name.replace("-", "_")
             ))
             .current_dir(&self.root)
             .stderr(Stdio::inherit())

@@ -95,6 +95,7 @@ fn main() {
 
             MuProject::init(name);
         }
+        
         Commands::Frontend { command } => match command {
             Frontend::Add { name, template } => {
                 get_project().add_frontend(&name, template);

@@ -1,6 +1,6 @@
 [package]
 name = "mu-sdk"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 authors = ["Mu Team <info@muprotocol.io>"]
 description = "The Mu SDK for bridging the Web2 and Web3 worlds"
@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/muprotocol/mu-rs"
 
 [dependencies]
-mu-sdk-macros = { path = "../mu-sdk-macros", version = "0.0.1" }
+mu-sdk-macros = { path = "../mu-sdk-macros", version = "0.0.2" }
 ic-cdk = "0.16"
 candid = "0.10"
 ic_principal = "0.1.1"

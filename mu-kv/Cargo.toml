@@ -1,7 +1,12 @@
 [package]
 name = "mu-kv"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+authors = ["Mu Team <info@muprotocol.io>"]
+description = "The Mu Key-Value Store"
+license = "Apache-2.0"
+repository = "https://github.com/muprotocol/mu-rs"
+
 
 [lib]
 crate-type = ["cdylib"]
